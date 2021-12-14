@@ -2,44 +2,42 @@ $(function(){
     
     // 手写板对象
     var signaturePad;
-    
-// 初始化
-window.Asc.plugin.init = function(sHtml){
-    // 获取绘图元素
-    var canvas = document.getElementById('signature-pad');
 
-    // 调整大小
-    function resizeCanvas() {
-        // When zoomed out to less than 100%, for some very strange reason,
-        // some browsers report devicePixelRatio as less than 1
-        // and only part of the canvas is cleared then.
-        var ratio =  Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
+    // 初始化
+    window.Asc.plugin.init = function(sHtml){
+        // 获取绘图元素
+        var canvas = document.getElementById('signature-pad');
+
+        // 调整大小
+        function resizeCanvas() {
+            // When zoomed out to less than 100%, for some very strange reason,
+            // some browsers report devicePixelRatio as less than 1
+            // and only part of the canvas is cleared then.
+            var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+
+        window.onresize = resizeCanvas;
+        resizeCanvas();
+
+
+        // 创建手写板对象
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)'  // 背景色
+        });
+
+        // 定位到手写板
+    
     }
 
-    window.onresize = resizeCanvas;
-    resizeCanvas();
-    
-    
-    // 创建手写板对象
-    signaturePad = new SignaturePad(canvas, {
-        backgroundColor: 'rgb(255, 255, 255)'  // 背景色
-    });
-    
-    // 定位到手写板
-    
-}
-
-// 按钮事件
-window.Asc.plugin.button = function(id){
+    // 按钮事件
+    window.Asc.plugin.button = function(id){
         if (id == 0){
-            
             // 获取图片
             var data = signaturePad.toDataURL('image/png');
-            
-            
+
             var width = 600;
             var height = 300;
             var nEmuWidth = ((width / 96) * 914400 + 0.5) >> 0;
@@ -48,34 +46,27 @@ window.Asc.plugin.button = function(id){
             var sScript = '';
             switch (window.Asc.plugin.info.editorType){
                 case 'word': {
-                    sScript += 'var oDocument = Api.GetDocument();';
-                    sScript += '\nvar oParaevent_onDocumentContentReady graph, oRun, arrInsertResult = [], oImage;';
-                    sScript += '\noParagraph = Api.CreateParagraph();';
-                    sScript += '\narrInsertResult.push(oParagraph);';
-                    sScript += '\n oImage = Api.CreateImage(\'' + data + '\', ' + nEmuWidth+ ', ' + nEmuHeight + ');';
-                    sScript += '\n oImage.SetWrappingStyle(\'' + inFront + '\');';
-                    sScript += '\noParagraph.AddDrawing(oImage);';
-                    sScript += '\noDocument.InsertContent(arrInsertResult);';
+                    insertImage(data);
+                    this.executeCommand("close", "");
                     break;
                 }
                 case 'cell':{
                     sScript += 'var oWorksheet = Api.GetActiveSheet();';
                     sScript += '\n oWorksheet.ReplaceCurrentImage(\'' + data + '\', ' +nEmuWidth + ', ' + nEmuHeight + ');';
+                    // 执行命令，保存并关闭
+                    window.Asc.plugin.info.recalculate = true;
+                    window.Asc.plugin.callCommand("close", sScript);
                     break;
                 }
                 case 'slide':{
                     sScript += 'var oPresentation = Api.GetPresentation();';
                     sScript += '\n oPresentation.ReplaceCurrentImage(\'' + data + '\', ' + nEmuWidth + ', ' + nEmuHeight + ');';
+                    // 执行命令，保存并关闭
+                    window.Asc.plugin.info.recalculate = true;
+                    window.Asc.plugin.callCommand("close", sScript);
                     break;
                 }
            }
-
-
-
-            // 执行命令，保存并关闭
-            window.Asc.plugin.info.recalculate = true;
-			window.Asc.plugin.callCommand("close", sScript);
-                
         }else if(id==1){
             // 关闭手写板
             this.executeCommand("close", "");
@@ -105,7 +96,7 @@ window.Asc.plugin.button = function(id){
             arrInsertResult.push(oParagraph);
             var width = 40 * 36000;
             var height = 40 * 36000;
-            oImage = Api.CreateImage(Asc.scope.imageUrl, width, width);
+            oImage = Api.CreateImage(Asc.scope.imageUrl, width, height);
             oImage.SetWrappingStyle("inFront");
             oParagraph.AddDrawing(oImage);
             oDocument.InsertContent(arrInsertResult);
