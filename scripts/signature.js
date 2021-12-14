@@ -49,10 +49,11 @@ window.Asc.plugin.button = function(id){
             switch (window.Asc.plugin.info.editorType){
                 case 'word': {
                     sScript += 'var oDocument = Api.GetDocument();';
-                    sScript += '\nvar oParagraph, oRun, arrInsertResult = [], oImage;';
+                    sScript += '\nvar oParaevent_onDocumentContentReady graph, oRun, arrInsertResult = [], oImage;';
                     sScript += '\noParagraph = Api.CreateParagraph();';
                     sScript += '\narrInsertResult.push(oParagraph);';
                     sScript += '\n oImage = Api.CreateImage(\'' + data + '\', ' + nEmuWidth+ ', ' + nEmuHeight + ');';
+                    sScript += '\n oImage.SetWrappingStyle(\'' + inFront + '\');';
                     sScript += '\noParagraph.AddDrawing(oImage);';
                     sScript += '\noDocument.InsertContent(arrInsertResult);';
                     break;
@@ -64,16 +65,16 @@ window.Asc.plugin.button = function(id){
                 }
                 case 'slide':{
                     sScript += 'var oPresentation = Api.GetPresentation();';
-                    sScript += '\n oPresentation.ReplaceCurrentImage(\'' + data + '\', ' + nEmuWidth + ', ' + nEmuHeight + ');'; 
+                    sScript += '\n oPresentation.ReplaceCurrentImage(\'' + data + '\', ' + nEmuWidth + ', ' + nEmuHeight + ');';
                     break;
                 }
            }
-             
-            
-            
+
+
+
             // 执行命令，保存并关闭
             window.Asc.plugin.info.recalculate = true;
-			window.Asc.plugin.executeCommand("close", sScript);
+			window.Asc.plugin.callCommand("close", sScript);
                 
         }else if(id==1){
             // 关闭手写板
@@ -93,6 +94,22 @@ window.Asc.plugin.button = function(id){
             // 关闭手写板
             this.executeCommand("close", "");
         }
+    };
+
+    function insertImage(url) {
+        Asc.scope.imageUrl = url;
+        window.Asc.plugin.callCommand(function () {
+            var oDocument = Api.GetDocument();
+            var oParagraph, oRun, arrInsertResult = [], oImage;
+            oParagraph = Api.CreateParagraph();
+            arrInsertResult.push(oParagraph);
+            var width = 40 * 36000;
+            var height = 40 * 36000;
+            oImage = Api.CreateImage(Asc.scope.imageUrl, width, width);
+            oImage.SetWrappingStyle("inFront");
+            oParagraph.AddDrawing(oImage);
+            oDocument.InsertContent(arrInsertResult);
+        }, false);
     };
 
 });
